@@ -142,7 +142,7 @@
   [cards this]
 ++  on-peek
   |=  pax=path
-  ~&  pax
+  :: ~&  pax
   ^-  (unit (unit cage))
   ?+    pax  (on-peek:def pax)
       [%x %libraries ~]
@@ -254,6 +254,7 @@
   --
 ++  handle-frontend
   |=  [=frontend:library]
+  :: ~&  >>  frontend
   |^  ^-  (quip card _state)
   =^  cards  state
   ?-    -.frontend
@@ -270,6 +271,39 @@
     =/  time-sent     now.bowl
     =/  book          book.frontend
     (poke-local (add-book:libr [our.bowl library-name] author time-sent book))
+    ::
+      %remove-library
+    =/  library-name  library-name.frontend
+    =/  time-sent     now.bowl
+    =.  policies      (~(del by policies) library-name)       ::  remove the policy for the given rid from
+    (poke-local (remove-library:libr [our.bowl library-name] time-sent))   
+    ::
+      %add-comment
+    =/  library-name  library-name.frontend
+    =/  top           top.frontend
+    =/  author        src.bowl
+    =/  time-sent     now.bowl
+    =/  comment       comment.frontend
+    =/  prm           (~(get by readers) author)
+    ::                                                   ::  commenter must be either:
+    ?>  ?|  (is-owner author)                            ::  us
+            (~(has ju (need prm)) library-name top)      ::  someone with permissions
+        ==
+    =/  update  (add-comment:libr [our.bowl library-name] top author time-sent comment)
+    [(poke-local-store update)^~ state]
+    ::
+      %remove-comment
+    =/  library-name   library-name.frontend
+    =/  comment-index  index.frontend
+    ?>  ?=([@ %comments @ ~] comment-index)
+    =/  prev-comment-update
+      (scry-for:gra update:store (weld /graph/(scot %p our.bowl)/[library-name]/node/index/kith (index-to-path:libr comment-index)))
+    :: witfyl turned this off because he couldn't figure out how to reference can-remove-comment from here
+    :: ?.  (can-remove-comment src.bowl comment-index prev-comment-update)
+    ::   `state  :: if requesting ship cannot remove comment, silently ignore
+    =/  remove-update  (remove-comment:libr [our.bowl library-name] comment-index now.bowl)
+    [(poke-local-store remove-update)^~ state]
+    :: `state      
   ==
   [cards state]
   ::
@@ -300,6 +334,7 @@
         %remove-comment
       =/  library-name   library-name.action
       =/  comment-index  index.action
+      ~&  >>>  "Remove comment action: {<comment-index>}"
       ?>  ?=([@ %comments @ ~] comment-index)
       =/  prev-comment-update
         (scry-for:gra update:store (weld /graph/(scot %p our.bowl)/[library-name]/node/index/kith (index-to-path:libr comment-index)))

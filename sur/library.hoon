@@ -38,7 +38,10 @@
 ::  handle input from front end
 +$  frontend
   $%  [%create-library library-name=@tas policy=@tas]
+      [%remove-library library-name=@tas]
       [%add-book library-name=@tas =book]
+      [%add-comment library-name=@tas top=@ =comment]
+      [%remove-comment library-name=@tas =index:store]
   ==
 ::
 ::  poke-backs to scry wrappers
